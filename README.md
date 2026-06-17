@@ -182,10 +182,12 @@ python meic.py config delete --profile NAME      # delete a profile
 `config set` accepts any combination of:
 
 ```
---delta FLOAT       --width FLOAT       --symbol STR
---quantity INT      --min-credit FLOAT  --max-credit FLOAT
---bp-buffer FLOAT   --profile NAME
+--delta FLOAT       --width FLOAT           --symbol STR
+--quantity INT      --times "HH:MM,..."     --min-credit FLOAT
+--max-credit FLOAT  --bp-buffer FLOAT       --profile NAME
 ```
+
+`--times` accepts a comma-separated list of HH:MM values (e.g. `"10:55,11:25,13:35"`). Each time must be within market hours (09:30–15:55 ET), with no duplicates and 1–8 entries.
 
 ---
 
@@ -199,7 +201,7 @@ contains all strategy and safety parameters for one trading configuration.
 | `symbol` | `XSP` | Underlying symbol |
 | `delta` | `0.15` | Target short strike delta (≤ this value) |
 | `wing_width` | `3.0` | Points between short and long strikes |
-| `entry_times` | `["10:55","11:25","12:25","13:35"]` | ET entry times |
+| `entry_times` | `["10:55","11:25","12:25","13:35"]` | ET entry times (1–8 unique HH:MM, 09:30–15:55) |
 | `quantity` | `1` | Contracts per entry |
 | `stop_trigger_ratio` | `0.90` | Stop trigger as fraction of IC credit |
 | `stop_limit_ratio` | `0.95` | Stop limit as fraction of IC credit |

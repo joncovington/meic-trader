@@ -5,6 +5,7 @@ Credentials are read from Windows Credential Manager via keyring (DPAPI).
 Strategy settings are loaded from profiles/<name>.json.
 The active profile name comes from settings.json; --profile CLI arg overrides it.
 """
+import datetime
 import json
 from decimal import Decimal
 from pathlib import Path
@@ -143,6 +144,34 @@ _PROFILE_DEFAULTS = {
     "stop_trigger_ratio": 0.90,
     "stop_limit_ratio":   0.95,
 }
+
+
+_MARKET_OPEN  = datetime.time(9, 30)
+_MARKET_CLOSE = datetime.time(15, 55)
+
+
+def validate_entry_times(times: list) -> str | None:
+    """
+    Return an error string if times is invalid, None if OK.
+    Rules (always enforced, including experimental mode):
+      - 1–8 entries
+      - no duplicates
+      - each must be a valid HH:MM
+      - each must be within 09:30–15:55 ET
+    """
+    if not (1 <= len(times) <= 8):
+        return f"entry_times must have 1–8 entries (got {len(times)})"
+    if len(times) != len(set(times)):
+        return "entry_times must not contain duplicates"
+    for t in times:
+        try:
+            h, m = map(int, str(t).split(":"))
+            et = datetime.time(h, m)
+        except Exception:
+            return f"'{t}' is not a valid HH:MM time"
+        if not (_MARKET_OPEN <= et <= _MARKET_CLOSE):
+            return f"'{t}' is outside market hours (09:30–15:55 ET)"
+    return None
 
 
 def save_profile(name: str, data: dict) -> None:

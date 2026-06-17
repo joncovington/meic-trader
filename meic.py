@@ -323,8 +323,16 @@ def _interactive_profile_tui(name: str, defaults: dict) -> dict:
     d["delta"]              = float(Prompt.ask("Target delta",       default=str(d.get("delta", 0.15))))
     d["wing_width"]         = float(Prompt.ask("Wing width",         default=str(d.get("wing_width", 3.0))))
     entry_default           = ",".join(d.get("entry_times", ["10:55","11:25","12:25","13:35"]))
-    entry_str               = Prompt.ask("Entry times (comma-separated HH:MM)", default=entry_default)
-    d["entry_times"]        = [t.strip() for t in entry_str.split(",")]
+    while True:
+        entry_str = Prompt.ask("Entry times (comma-separated HH:MM)", default=entry_default)
+        times = [t.strip() for t in entry_str.split(",")]
+        from config import validate_entry_times
+        err = validate_entry_times(times)
+        if err:
+            console.print(f"[red]Error: {err}[/red]")
+        else:
+            d["entry_times"] = times
+            break
     d["quantity"]           = int(Prompt.ask("Quantity (contracts)", default=str(d.get("quantity", 1))))
     d["stop_trigger_ratio"] = float(Prompt.ask("Stop trigger ratio", default=str(d.get("stop_trigger_ratio", 0.90))))
     d["stop_limit_ratio"]   = float(Prompt.ask("Stop limit ratio",   default=str(d.get("stop_limit_ratio", 0.95))))
@@ -434,6 +442,15 @@ def _config_set(args: argparse.Namespace) -> None:
     if args.bp_buffer is not None:
         data["bp_buffer"] = args.bp_buffer
         changed = True
+    if getattr(args, "times", None) is not None:
+        from config import validate_entry_times
+        times = [t.strip() for t in args.times.split(",")]
+        err = validate_entry_times(times)
+        if err:
+            console.print(f"[red]Error: {err}[/red]")
+            sys.exit(1)
+        data["entry_times"] = times
+        changed = True
 
     if changed:
         save_profile(name, data)
@@ -539,6 +556,9 @@ def _build_parser() -> argparse.ArgumentParser:
     set_p.add_argument("--width",      type=float, default=None)
     set_p.add_argument("--symbol",     type=str,   default=None)
     set_p.add_argument("--quantity",   type=int,   default=None)
+    set_p.add_argument("--times",      type=str,   default=None,
+                       metavar="HH:MM,...",
+                       help="Comma-separated entry times, e.g. '10:55,11:25,13:35'")
     set_p.add_argument("--min-credit", dest="min_credit", type=float, default=None)
     set_p.add_argument("--max-credit", dest="max_credit", type=float, default=None)
     set_p.add_argument("--bp-buffer",  dest="bp_buffer",  type=float, default=None)
