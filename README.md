@@ -1,9 +1,8 @@
 # MEIC Trader
 
-Automated Multiple Entry Iron Condor (MEIC) paper trading bot for XSP using the
-[tastytrade](https://tastytrade.com) API. Places up to 4 iron condor entries per
-day at scheduled times, manages GTC stop-limit orders, and tracks P&L in a local
-SQLite database.
+Automated Multiple Entry Iron Condor (MEIC) trading bot using the Tastytrade API.
+Places iron condor entries per day at scheduled times, manages GTC stop-limit
+orders, and tracks P&L in a local SQLite database.
 
 ---
 
