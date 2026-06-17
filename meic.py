@@ -230,13 +230,22 @@ def _secrets_store(mode: str) -> None:
         from tastytrade.account import Account
         import client as _client
         loop = asyncio.get_event_loop()
+
+        # Session() constructor is synchronous and blocking
         sess = await loop.run_in_executor(
             None, lambda: Session(secret, refresh, is_test=(mode == "sandbox"))
         )
-        ok = await loop.run_in_executor(None, sess.validate)
+
+        # validate() and get_accounts() may be async (SDK v12+) or sync;
+        # call them and await the result only if it is a coroutine
+        validate_result = sess.validate()
+        ok = await validate_result if asyncio.iscoroutine(validate_result) else validate_result
         if not ok:
             raise RuntimeError("session.validate() returned False")
-        accounts = await loop.run_in_executor(None, lambda: Account.get_accounts(sess))
+
+        accounts_result = Account.get_accounts(sess)
+        accounts = await accounts_result if asyncio.iscoroutine(accounts_result) else accounts_result
+
         acct_no = accounts[0].account_number if accounts else "—"
         expiry  = _client._fmt_expiry(sess.session_expiration)
         return f"account {acct_no}, token expires {expiry}"

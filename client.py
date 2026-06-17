@@ -126,9 +126,9 @@ async def _authenticate() -> Session:
 
 async def _validate_session(session: Session) -> bool:
     """Return True if the session is accepted by the API."""
-    loop = asyncio.get_event_loop()
     try:
-        ok: bool = await loop.run_in_executor(None, session.validate)
+        result = session.validate()
+        ok: bool = await result if asyncio.iscoroutine(result) else result
         return ok
     except Exception:
         log.debug("Session validation raised an exception.", exc_info=True)
@@ -229,10 +229,8 @@ async def get_account() -> Account:
         return _account
 
     session = await get_session()
-    loop = asyncio.get_event_loop()
-    accounts: list[Account] = await loop.run_in_executor(
-        None, lambda: Account.get_accounts(session)
-    )
+    result = Account.get_accounts(session)
+    accounts: list[Account] = await result if asyncio.iscoroutine(result) else result
 
     if not accounts:
         raise RuntimeError("No accounts found on this sandbox session.")
