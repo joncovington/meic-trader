@@ -224,20 +224,26 @@ def _secrets_store(mode: str) -> None:
     keyring.set_password(f"{pfx}_token",  "refresh_token", refresh)
     console.print("[green]Credentials saved to Windows Credential Manager.[/green]\n")
 
-    # Verify
+    # Verify — all tastytrade SDK calls are blocking; run them in a thread via asyncio
     console.print("Verifying credentials...")
-    try:
-        session = Session(secret, refresh, is_test=(mode == "sandbox"))
-        ok = session.validate()
-        if ok:
-            from tastytrade.account import Account
-            accounts = Account.get_accounts(session)
-            acct_no = accounts[0].account_number if accounts else "—"
-            import client as _client
-            expiry = _client._fmt_expiry(session.session_expiration)
-            console.print(f"[green]✓  Login successful — account {acct_no}, token expires {expiry}[/green]")
-        else:
+    async def _verify() -> str:
+        from tastytrade.account import Account
+        import client as _client
+        loop = asyncio.get_event_loop()
+        sess = await loop.run_in_executor(
+            None, lambda: Session(secret, refresh, is_test=(mode == "sandbox"))
+        )
+        ok = await loop.run_in_executor(None, sess.validate)
+        if not ok:
             raise RuntimeError("session.validate() returned False")
+        accounts = await loop.run_in_executor(None, lambda: Account.get_accounts(sess))
+        acct_no = accounts[0].account_number if accounts else "—"
+        expiry  = _client._fmt_expiry(sess.session_expiration)
+        return f"account {acct_no}, token expires {expiry}"
+
+    try:
+        info = asyncio.run(_verify())
+        console.print(f"[green]✓  Login successful — {info}[/green]")
     except Exception as exc:
         console.print(f"[red]✗  Verification failed: {exc}[/red]")
         console.print("[yellow]Removing invalid credentials from Credential Manager…[/yellow]")
