@@ -1,0 +1,10 @@
+session_cache.json
+trades.db
+reports/
+settings.json
+profiles/
+*.log
+__pycache__/
+*.pyc
+.env
+.env.live
