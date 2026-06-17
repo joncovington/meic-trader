@@ -267,6 +267,10 @@ def _secrets_store(mode: str) -> None:
 def cmd_config(args: argparse.Namespace) -> None:
     subcmd = args.config_cmd
 
+    if subcmd is None:
+        _config_new(getattr(args, "profile", None))
+        return
+
     if subcmd == "list":
         _config_list()
     elif subcmd == "show":
@@ -551,7 +555,8 @@ def _build_parser() -> argparse.ArgumentParser:
     # config
     cfg_p = sub.add_parser("config", help="Manage strategy profiles")
     cfg_p.add_argument("--profile", default=None)
-    cfg_sub = cfg_p.add_subparsers(dest="config_cmd", required=True)
+    cfg_p.set_defaults(config_cmd=None)
+    cfg_sub = cfg_p.add_subparsers(dest="config_cmd")
     cfg_p.set_defaults(func=cmd_config)
 
     cfg_sub.add_parser("list")
