@@ -235,8 +235,7 @@ async def get_account() -> Account:
         return _account
 
     session = await get_session()
-    result = Account.get_accounts(session)
-    accounts: list[Account] = await result if asyncio.iscoroutine(result) else result
+    accounts: list[Account] = await Account.get(session)
 
     if not accounts:
         raise RuntimeError("No accounts found on this sandbox session.")

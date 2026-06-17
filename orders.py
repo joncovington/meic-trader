@@ -211,8 +211,7 @@ async def _run_live_guards(entry_label: str, ic_credit: Decimal, strikes: Select
     if config.BP_CHECK_ENABLED:
         session = await get_session()
         account = await get_account()
-        loop = asyncio.get_event_loop()
-        balances = await loop.run_in_executor(None, lambda: account.get_balances(session))
+        balances = await account.get_balances(session)
         available_bp = Decimal(str(getattr(balances, "derivative_buying_power", 0) or 0))
         margin_req = (config.WING_WIDTH * 100) - ic_credit
         bp_needed  = margin_req * config.BP_BUFFER

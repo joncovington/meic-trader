@@ -243,8 +243,7 @@ def _secrets_store(mode: str) -> None:
         if asyncio.iscoroutine(refresh_result):
             await refresh_result
 
-        accounts_result = Account.get_accounts(sess)
-        accounts = await accounts_result if asyncio.iscoroutine(accounts_result) else accounts_result
+        accounts = await Account.get(sess)
 
         acct_no = accounts[0].account_number if accounts else "—"
         expiry  = _client._fmt_expiry(sess.session_expiration)

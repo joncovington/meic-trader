@@ -27,10 +27,9 @@ _STARTUP_RETRY_DELAY  = 5
 
 async def _connect_once() -> tuple:
     """Single attempt to authenticate and fetch account + balances. Returns (session, account, balances)."""
-    loop = asyncio.get_event_loop()
     session  = await get_session(force_reauth=True)
     account  = await get_account()
-    balances = await loop.run_in_executor(None, lambda: account.get_balances(session))
+    balances = await account.get_balances(session)
     return session, account, balances
 
 

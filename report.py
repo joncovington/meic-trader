@@ -90,29 +90,22 @@ async def _reconstruct_today(symbol: str) -> list[IcEntry]:
     from client import get_session, get_account
     session = await get_session()
     account = await get_account()
-    loop    = asyncio.get_event_loop()
     today   = datetime.now(ET).date()
 
     log.info("Reconstructing today's entries from API (%s)...", today)
 
-    orders = await loop.run_in_executor(
-        None,
-        lambda: account.get_order_history(
-            session,
-            start_date=today,
-            end_date=today,
-            underlying_symbol=symbol,
-        ),
+    orders = await account.get_order_history(
+        session,
+        start_date=today,
+        end_date=today,
+        underlying_symbol=symbol,
     )
 
-    transactions = await loop.run_in_executor(
-        None,
-        lambda: account.get_history(
-            session,
-            start_date=today,
-            end_date=today,
-            underlying_symbol=symbol,
-        ),
+    transactions = await account.get_history(
+        session,
+        start_date=today,
+        end_date=today,
+        underlying_symbol=symbol,
     )
 
     # Index transactions by order_id for fast fee lookup
