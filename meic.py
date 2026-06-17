@@ -496,6 +496,7 @@ def _ensure_profile_exists() -> None:
 
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="meic", description="MEIC Trader CLI")
+    p.add_argument("--debug", action="store_true", help="Show debug-level logs in the console")
     sub = p.add_subparsers(dest="command", required=True)
 
     # Shared: --sandbox / --live and --profile
@@ -591,6 +592,9 @@ def main(argv: list[str] | None = None) -> None:
 
     parser = _build_parser()
     args = parser.parse_args(argv)
+
+    from logger import set_debug
+    set_debug(args.debug)
 
     # For run/auth, ensure at least one profile exists before loading config
     if args.command in ("run", "auth"):
