@@ -132,6 +132,36 @@ def _build_spread_stop_limit(
     )
 
 
+_CLOSING_ACTIONS = {"Buy to Close", "Sell to Close", "BUY_TO_CLOSE", "SELL_TO_CLOSE"}
+
+
+async def check_conflicting_orders(strikes: SelectedStrikes) -> list[str]:
+    """
+    Return a list of conflict descriptions if any of the 4 IC strike symbols
+    appear as BTC or STC legs in existing live orders. Empty list = no conflict.
+    """
+    session = await get_session()
+    account = await get_account()
+    live_orders = await account.get_live_orders(session)
+
+    target_symbols = {
+        strikes.short_put.symbol,
+        strikes.long_put.symbol,
+        strikes.short_call.symbol,
+        strikes.long_call.symbol,
+    }
+
+    conflicts = []
+    for order in live_orders:
+        for leg in order.legs:
+            action_str = str(leg.action)
+            if action_str in _CLOSING_ACTIONS and leg.symbol in target_symbols:
+                conflicts.append(
+                    f"{leg.symbol} has a {action_str} leg in live order {order.id}"
+                )
+    return conflicts
+
+
 async def _place_order_async(account: Account, session, order: NewOrder):
     """Place an order using the async SDK method."""
     return await account.place_order(session, order, dry_run=False)

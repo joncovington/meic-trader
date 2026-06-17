@@ -43,6 +43,8 @@ MIN_CREDIT:         Decimal = Decimal("0.50")
 MAX_CREDIT:         Decimal = Decimal("5.00")
 BP_CHECK_ENABLED:   bool    = True
 BP_BUFFER:          Decimal = Decimal("1.25")
+ENTRY_MAX_RETRIES:  int     = 3
+ENTRY_RETRY_DELAY:  int     = 60   # seconds
 
 # ── active profile name ───────────────────────────────────────────────────────
 
@@ -101,6 +103,7 @@ def apply_profile(profile: dict) -> None:
     global SYMBOL, TARGET_DELTA, WING_WIDTH, ENTRY_TIMES_ET, QUANTITY
     global EXPERIMENTAL, STOP_TRIGGER_RATIO, STOP_LIMIT_RATIO
     global MIN_CREDIT, MAX_CREDIT, BP_CHECK_ENABLED, BP_BUFFER
+    global ENTRY_MAX_RETRIES, ENTRY_RETRY_DELAY
 
     SYMBOL             = profile["symbol"]
     TARGET_DELTA       = Decimal(str(profile["delta"]))
@@ -114,6 +117,8 @@ def apply_profile(profile: dict) -> None:
     MAX_CREDIT         = Decimal(str(profile.get("max_credit",  "5.00")))
     BP_CHECK_ENABLED   = bool(profile.get("bp_check_enabled", True))
     BP_BUFFER          = Decimal(str(profile.get("bp_buffer", "1.25")))
+    ENTRY_MAX_RETRIES  = int(profile.get("entry_max_retries", 3))
+    ENTRY_RETRY_DELAY  = int(profile.get("entry_retry_delay", 60))
 
 
 def init(mode: str = "sandbox", profile_override: str | None = None) -> None:
@@ -143,6 +148,8 @@ _PROFILE_DEFAULTS = {
     "bp_buffer":          1.25,
     "stop_trigger_ratio": 0.90,
     "stop_limit_ratio":   0.95,
+    "entry_max_retries":  3,
+    "entry_retry_delay":  60,
 }
 
 
