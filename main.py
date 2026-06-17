@@ -41,8 +41,8 @@ async def _startup() -> tuple:
     """
     mode_label = "Sandbox" if config.MODE == "sandbox" else "LIVE"
     profile_label = config.ACTIVE_PROFILE
-    exp_warn = "  [bold yellow]⚠ EXPERIMENTAL PROFILE[/bold yellow]\n" if config.EXPERIMENTAL else ""
-    live_warn = "  [bold yellow]⚠ LIVE MODE — ORDERS WILL BE SUBMITTED[/bold yellow]\n" if config.MODE == "live" else ""
+    exp_warn = "  [bold yellow][!] EXPERIMENTAL PROFILE[/bold yellow]\n" if config.EXPERIMENTAL else ""
+    live_warn = "  [bold yellow][!] LIVE MODE -- ORDERS WILL BE SUBMITTED[/bold yellow]\n" if config.MODE == "live" else ""
 
     last_exc: Exception | None = None
     for attempt in range(1, _MAX_STARTUP_ATTEMPTS + 1):
@@ -51,21 +51,21 @@ async def _startup() -> tuple:
 
             nlv = getattr(balances, "net_liquidating_value",   None)
             bp  = getattr(balances, "derivative_buying_power", None)
-            nlv_str = f"${float(nlv):,.2f}" if nlv is not None else "—"
-            bp_str  = f"${float(bp):,.2f}"  if bp  is not None else "—"
+            nlv_str = f"${float(nlv):,.2f}" if nlv is not None else "N/A"
+            bp_str  = f"${float(bp):,.2f}"  if bp  is not None else "N/A"
             expiry  = client._fmt_expiry(session.session_expiration)
             acct_no = account.account_number
             acct_type = getattr(account, "account_type_name", "")
 
             body = (
                 f"{live_warn}{exp_warn}"
-                f"  [green]✓  Connected[/green]\n"
+                f"  [green][OK]  Connected[/green]\n"
                 f"  Account   [bold]{acct_no}[/bold]  ({acct_type})\n"
-                f"  Balance   NLV {nlv_str}  │  BP {bp_str}\n"
+                f"  Balance   NLV {nlv_str}  |  BP {bp_str}\n"
                 f"  Token     expires {expiry}\n"
-                f"  Profile   {profile_label}  │  Mode: {mode_label}"
+                f"  Profile   {profile_label}  |  Mode: {mode_label}"
             )
-            console.print(Panel(body, title=f"MEIC Trader  ·  {mode_label} Connection", border_style="green"))
+            console.print(Panel(body, title=f"MEIC Trader - {mode_label} Connection", border_style="green"))
             log.info(
                 "Ready. Account: %s | Token expires: %s | Profile: %s",
                 acct_no, expiry, profile_label,
@@ -77,13 +77,13 @@ async def _startup() -> tuple:
             log.warning("Startup attempt %d/%d failed: %s", attempt, _MAX_STARTUP_ATTEMPTS, exc)
             if attempt < _MAX_STARTUP_ATTEMPTS:
                 console.print(
-                    f"[yellow]  Connection attempt {attempt}/{_MAX_STARTUP_ATTEMPTS} failed — "
-                    f"retrying in {_STARTUP_RETRY_DELAY}s…[/yellow]"
+                    f"[yellow]  Connection attempt {attempt}/{_MAX_STARTUP_ATTEMPTS} failed -- "
+                    f"retrying in {_STARTUP_RETRY_DELAY}s...[/yellow]"
                 )
                 await asyncio.sleep(_STARTUP_RETRY_DELAY)
 
-    body = f"  [red]✗  Authentication failed[/red]\n  {last_exc}"
-    console.print(Panel(body, title=f"MEIC Trader  ·  {mode_label} Connection", border_style="red"))
+    body = f"  [red][FAIL]  Authentication failed[/red]\n  {last_exc}"
+    console.print(Panel(body, title=f"MEIC Trader - {mode_label} Connection", border_style="red"))
     sys.exit(1)
 
 

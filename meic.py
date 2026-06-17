@@ -192,9 +192,9 @@ def _secrets_show() -> None:
         secret  = keyring.get_password(f"{pfx}_secret", "client_secret")
         refresh = keyring.get_password(f"{pfx}_token",  "refresh_token")
         if secret and refresh:
-            console.print(f"[green]✓[/green]  {mode.capitalize()} credentials stored in Credential Manager")
+            console.print(f"[green][OK][/green]  {mode.capitalize()} credentials stored in Credential Manager")
         else:
-            console.print(f"[red]✗[/red]  {mode.capitalize()} credentials NOT found")
+            console.print(f"[red][--][/red]  {mode.capitalize()} credentials NOT found")
 
 
 def _secrets_delete(mode: str) -> None:
@@ -245,16 +245,16 @@ def _secrets_store(mode: str) -> None:
 
         accounts = await Account.get(sess)
 
-        acct_no = accounts[0].account_number if accounts else "—"
+        acct_no = accounts[0].account_number if accounts else "N/A"
         expiry  = _client._fmt_expiry(sess.session_expiration)
         return f"account {acct_no}, token expires {expiry}"
 
     try:
         info = asyncio.run(_verify())
-        console.print(f"[green]✓  Login successful — {info}[/green]")
+        console.print(f"[green][OK]  Login successful -- {info}[/green]")
     except Exception as exc:
-        console.print(f"[red]✗  Verification failed: {exc}[/red]")
-        console.print("[yellow]Removing invalid credentials from Credential Manager…[/yellow]")
+        console.print(f"[red][FAIL]  Verification failed: {exc}[/red]")
+        console.print("[yellow]Removing invalid credentials from Credential Manager...[/yellow]")
         keyring.delete_password(f"{pfx}_secret", "client_secret")
         keyring.delete_password(f"{pfx}_token",  "refresh_token")
         sys.exit(1)
@@ -382,7 +382,7 @@ def _config_new(profile_name: str | None) -> None:
     defaults = json.loads(path.read_text(encoding="utf-8")) if path.exists() else default_profile_data()
     data = _interactive_profile_tui(name, defaults)
     save_profile(name, data)
-    console.print(f"\n[green]✓  Profile '{name}' saved.[/green]")
+    console.print(f"\n[green][OK]  Profile '{name}' saved.[/green]")
 
     # Set as active if it's the first profile or user confirms
     existing = get_active_profile_name()
@@ -487,7 +487,7 @@ def _ensure_profile_exists() -> None:
     data = _interactive_profile_tui("default", default_profile_data())
     save_profile("default", data)
     save_settings("default")
-    console.print("[green]✓  Configuration saved.[/green]\n")
+    console.print("[green][OK]  Configuration saved.[/green]\n")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
