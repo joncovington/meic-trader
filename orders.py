@@ -132,12 +132,9 @@ def _build_spread_stop_limit(
     )
 
 
-async def _place_order_sync(account: Account, session, order: NewOrder):
-    """Wrapper to run blocking place_order in thread pool."""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(
-        None, lambda: account.place_order(session, order, dry_run=False)
-    )
+async def _place_order_async(account: Account, session, order: NewOrder):
+    """Place an order using the async SDK method."""
+    return await account.place_order(session, order, dry_run=False)
 
 
 async def _poll_for_fill(account: Account, session, order_id: str) -> Decimal | None:
@@ -145,19 +142,15 @@ async def _poll_for_fill(account: Account, session, order_id: str) -> Decimal | 
     Poll until the order is filled or timeout.
     Returns the fill price (net credit per contract) or None on timeout/cancel.
     """
-    loop = asyncio.get_event_loop()
     elapsed = 0
     while elapsed < config.FILL_TIMEOUT:
         await asyncio.sleep(config.FILL_POLL_INTERVAL)
         elapsed += config.FILL_POLL_INTERVAL
-        order = await loop.run_in_executor(
-            None, lambda: account.get_order(session, order_id)
-        )
+        order = await account.get_order(session, order_id)
         status = order.status
         log.debug("Order %s status: %s", order_id, status)
 
         if status == "Filled":
-            # Fill price is the net credit (positive = credit received)
             fill_price = Decimal(str(order.price))
             log.info("Order %s FILLED at %.2f credit.", order_id, fill_price)
             return fill_price
@@ -167,7 +160,7 @@ async def _poll_for_fill(account: Account, session, order_id: str) -> Decimal | 
             return None
 
     log.warning("Order %s not filled after %ds — cancelling.", order_id, config.FILL_TIMEOUT)
-    await loop.run_in_executor(None, lambda: account.cancel_order(session, order_id))
+    await account.cancel_order(session, order_id)
     return None
 
 
@@ -238,7 +231,6 @@ async def place_ic_entry(entry_label: str, strikes: SelectedStrikes) -> EntryRes
     """
     session = await get_session()
     account = await get_account()
-    loop   = asyncio.get_event_loop()
 
     # --- 1. Mid price ---
     ic_credit = await _ic_mid_price(strikes)
@@ -254,7 +246,7 @@ async def place_ic_entry(entry_label: str, strikes: SelectedStrikes) -> EntryRes
     # --- 3. Place IC order ---
     ic_order = _build_ic_order(strikes, ic_credit)
     log.info("[%s] Placing IC order at %.2f credit...", entry_label, ic_credit)
-    response = await _place_order_sync(account, session, ic_order)
+    response = await _place_order_async(account, session, ic_order)
     order_id = str(response.order.id)
     log.info("[%s] IC order placed: id=%s", entry_label, order_id)
 
@@ -273,7 +265,7 @@ async def place_ic_entry(entry_label: str, strikes: SelectedStrikes) -> EntryRes
         stop_trigger, stop_limit,
         label=f"[{entry_label}] PUT",
     )
-    put_resp = await _place_order_sync(account, session, put_stop_order)
+    put_resp = await _place_order_async(account, session, put_stop_order)
     put_stop_id = str(put_resp.order.id)
     log.info("[%s] Put spread stop-limit placed: id=%s", entry_label, put_stop_id)
 
@@ -283,7 +275,7 @@ async def place_ic_entry(entry_label: str, strikes: SelectedStrikes) -> EntryRes
         stop_trigger, stop_limit,
         label=f"[{entry_label}] CALL",
     )
-    call_resp = await _place_order_sync(account, session, call_stop_order)
+    call_resp = await _place_order_async(account, session, call_stop_order)
     call_stop_id = str(call_resp.order.id)
     log.info("[%s] Call spread stop-limit placed: id=%s", entry_label, call_stop_id)
 

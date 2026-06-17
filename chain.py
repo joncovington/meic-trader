@@ -15,7 +15,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytz
-from tastytrade.instruments import Option, NestedOptionChain
+from tastytrade.instruments import Option, NestedOptionChain, get_option_chain
 from tastytrade.streamer import DXLinkStreamer
 from tastytrade.dxfeed import Greeks, EventType
 
@@ -118,20 +118,18 @@ def _find_wing(options: list[Option], strike: Decimal, option_type: str) -> Opti
 @reauth_on_401
 async def select_strikes() -> SelectedStrikes:
     session = await get_session()
-    loop = asyncio.get_event_loop()
 
     log.info("Fetching %s option chain...", config.SYMBOL)
-    chain: NestedOptionChain = await loop.run_in_executor(
-        None, lambda: NestedOptionChain.get_chain(session, config.SYMBOL)
-    )
+    chains = await NestedOptionChain.get(session, config.SYMBOL)
+    if not chains:
+        raise RuntimeError(f"No option chain found for {config.SYMBOL}.")
+    chain = chains[0]
 
     expiration_date = _select_expiration(chain)
 
     # Collect all options for the selected expiration
-    all_options: list[Option] = await loop.run_in_executor(
-        None,
-        lambda: Option.get_option_chain(session, config.SYMBOL, expiration_date),
-    )
+    option_chain_map = await get_option_chain(session, config.SYMBOL)
+    all_options: list[Option] = option_chain_map.get(expiration_date, [])
 
     if not all_options:
         raise RuntimeError(f"No options returned for {config.SYMBOL} {expiration_date}.")
