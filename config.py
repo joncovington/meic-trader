@@ -45,6 +45,8 @@ BP_CHECK_ENABLED:   bool    = True
 BP_BUFFER:          Decimal = Decimal("1.25")
 ENTRY_MAX_RETRIES:  int     = 3
 ENTRY_RETRY_DELAY:  int     = 60   # seconds
+FILL_TIMEOUT:       int     = 90   # seconds to wait for an IC order to fill
+FILL_POLL_INTERVAL: int     = 5    # seconds between fill status checks
 
 # ── active profile name ───────────────────────────────────────────────────────
 
