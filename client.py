@@ -164,14 +164,14 @@ async def _keepalive_loop() -> None:
             continue
         secs_left = sess.session_expiration - time.time()
         if secs_left <= _REFRESH_BUFFER_SECS:
-            log.info(
+            log.debug(
                 "Session token expires in %.0fs — refreshing proactively...", secs_left
             )
             try:
                 refresh_result = sess.refresh()
                 if asyncio.iscoroutine(refresh_result):
                     await refresh_result
-                log.info(
+                log.debug(
                     "Token refreshed. New expiry: %s",
                     _fmt_expiry(sess.session_expiration),
                 )
