@@ -358,8 +358,10 @@ def _interactive_profile_tui(name: str, defaults: dict) -> dict:
     d["max_credit"]         = float(Prompt.ask("Max credit ($)",     default=str(d.get("max_credit", 5.00))))
     d["bp_check_enabled"]   = Confirm.ask("Enable BP check?",        default=d.get("bp_check_enabled", True))
     d["bp_buffer"]          = float(Prompt.ask("BP buffer",          default=str(d.get("bp_buffer", 1.25))))
-    d["entry_max_retries"]  = int(Prompt.ask("Max entry retries",    default=str(d.get("entry_max_retries", 3))))
-    d["entry_retry_delay"]  = int(Prompt.ask("Entry retry delay (s)", default=str(d.get("entry_retry_delay", 60))))
+    d["entry_max_retries"]  = int(Prompt.ask("Max entry retries",      default=str(d.get("entry_max_retries", 3))))
+    d["entry_retry_delay"]  = int(Prompt.ask("Entry retry delay (s)",  default=str(d.get("entry_retry_delay", 60))))
+    d["fill_timeout"]       = int(Prompt.ask("Fill timeout (s)",       default=str(d.get("fill_timeout", 90))))
+    d["fill_poll_interval"] = int(Prompt.ask("Fill poll interval (s)", default=str(d.get("fill_poll_interval", 5))))
     d["experimental"]       = Confirm.ask("Experimental mode?",      default=bool(d.get("experimental", False)))
 
     # Validate

@@ -105,7 +105,7 @@ def apply_profile(profile: dict) -> None:
     global SYMBOL, TARGET_DELTA, WING_WIDTH, ENTRY_TIMES_ET, QUANTITY
     global EXPERIMENTAL, STOP_TRIGGER_RATIO, STOP_LIMIT_RATIO
     global MIN_CREDIT, MAX_CREDIT, BP_CHECK_ENABLED, BP_BUFFER
-    global ENTRY_MAX_RETRIES, ENTRY_RETRY_DELAY
+    global ENTRY_MAX_RETRIES, ENTRY_RETRY_DELAY, FILL_TIMEOUT, FILL_POLL_INTERVAL
 
     SYMBOL             = profile["symbol"]
     TARGET_DELTA       = Decimal(str(profile["delta"]))
@@ -121,6 +121,8 @@ def apply_profile(profile: dict) -> None:
     BP_BUFFER          = Decimal(str(profile.get("bp_buffer", "1.25")))
     ENTRY_MAX_RETRIES  = int(profile.get("entry_max_retries", 3))
     ENTRY_RETRY_DELAY  = int(profile.get("entry_retry_delay", 60))
+    FILL_TIMEOUT       = int(profile.get("fill_timeout", 90))
+    FILL_POLL_INTERVAL = int(profile.get("fill_poll_interval", 5))
 
 
 def init(mode: str = "sandbox", profile_override: str | None = None) -> None:
@@ -152,6 +154,8 @@ _PROFILE_DEFAULTS = {
     "stop_limit_ratio":   0.95,
     "entry_max_retries":  3,
     "entry_retry_delay":  60,
+    "fill_timeout":       90,
+    "fill_poll_interval": 5,
 }
 
 
