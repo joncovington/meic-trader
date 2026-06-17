@@ -118,6 +118,10 @@ async def _authenticate() -> Session:
             is_test=is_sandbox,
         ),
     )
+    # Session() sets a dummy token; call refresh() to exchange credentials for a real token.
+    refresh_result = session.refresh()
+    if asyncio.iscoroutine(refresh_result):
+        await refresh_result
     log.info("Authentication successful. Token expires at: %s",
              _fmt_expiry(session.session_expiration))
     _save_session(session)
@@ -125,13 +129,14 @@ async def _authenticate() -> Session:
 
 
 async def _validate_session(session: Session) -> bool:
-    """Return True if the session is accepted by the API."""
+    """Refresh the session token; return True on success, False on any error."""
     try:
-        result = session.validate()
-        ok: bool = await result if asyncio.iscoroutine(result) else result
-        return ok
+        refresh_result = session.refresh()
+        if asyncio.iscoroutine(refresh_result):
+            await refresh_result
+        return True
     except Exception:
-        log.debug("Session validation raised an exception.", exc_info=True)
+        log.debug("Session refresh failed during validation.", exc_info=True)
         return False
 
 
@@ -162,9 +167,10 @@ async def _keepalive_loop() -> None:
             log.info(
                 "Session token expires in %.0fs — refreshing proactively...", secs_left
             )
-            loop = asyncio.get_event_loop()
             try:
-                await loop.run_in_executor(None, sess.refresh)
+                refresh_result = sess.refresh()
+                if asyncio.iscoroutine(refresh_result):
+                    await refresh_result
                 log.info(
                     "Token refreshed. New expiry: %s",
                     _fmt_expiry(sess.session_expiration),

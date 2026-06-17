@@ -224,24 +224,24 @@ def _secrets_store(mode: str) -> None:
     keyring.set_password(f"{pfx}_token",  "refresh_token", refresh)
     console.print("[green]Credentials saved to Windows Credential Manager.[/green]\n")
 
-    # Verify — all tastytrade SDK calls are blocking; run them in a thread via asyncio
+    # Verify — Session() sets a dummy token; must call refresh() first to get a real token
     console.print("Verifying credentials...")
     async def _verify() -> str:
         from tastytrade.account import Account
         import client as _client
-        loop = asyncio.get_event_loop()
 
-        # Session() constructor is synchronous and blocking
+        # Session() constructor is synchronous; it sets a dummy token ("kyrieeleison") —
+        # no HTTP call is made.  We must call refresh() before any API interaction.
+        loop = asyncio.get_event_loop()
         sess = await loop.run_in_executor(
             None, lambda: Session(secret, refresh, is_test=(mode == "sandbox"))
         )
 
-        # validate() and get_accounts() may be async (SDK v12+) or sync;
-        # call them and await the result only if it is a coroutine
-        validate_result = sess.validate()
-        ok = await validate_result if asyncio.iscoroutine(validate_result) else validate_result
-        if not ok:
-            raise RuntimeError("session.validate() returned False")
+        # refresh() exchanges client_secret + refresh_token for a real access token.
+        # This is the step that actually validates the credentials.
+        refresh_result = sess.refresh()
+        if asyncio.iscoroutine(refresh_result):
+            await refresh_result
 
         accounts_result = Account.get_accounts(sess)
         accounts = await accounts_result if asyncio.iscoroutine(accounts_result) else accounts_result
