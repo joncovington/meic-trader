@@ -181,16 +181,16 @@ def cmd_secrets(args: argparse.Namespace) -> None:
         _secrets_store(args.mode)
 
 
-def _service(mode: str) -> str:
+def _prefix(mode: str) -> str:
     return "meic_trader_sandbox" if mode == "sandbox" else "meic_trader_live"
 
 
 def _secrets_show() -> None:
     import keyring
     for mode in ("sandbox", "live"):
-        svc = _service(mode)
-        secret  = keyring.get_password(svc, "client_secret")
-        refresh = keyring.get_password(svc, "refresh_token")
+        pfx     = _prefix(mode)
+        secret  = keyring.get_password(f"{pfx}_secret", "client_secret")
+        refresh = keyring.get_password(f"{pfx}_token",  "refresh_token")
         if secret and refresh:
             console.print(f"[green]✓[/green]  {mode.capitalize()} credentials stored in Credential Manager")
         else:
@@ -199,9 +199,9 @@ def _secrets_show() -> None:
 
 def _secrets_delete(mode: str) -> None:
     import keyring
-    svc = _service(mode)
-    keyring.delete_password(svc, "client_secret")
-    keyring.delete_password(svc, "refresh_token")
+    pfx = _prefix(mode)
+    keyring.delete_password(f"{pfx}_secret", "client_secret")
+    keyring.delete_password(f"{pfx}_token",  "refresh_token")
     console.print(f"[yellow]Deleted {mode} credentials from Credential Manager.[/yellow]")
 
 
@@ -219,9 +219,9 @@ def _secrets_store(mode: str) -> None:
         console.print("[red]Credentials cannot be empty.[/red]")
         sys.exit(1)
 
-    svc = _service(mode)
-    keyring.set_password(svc, "client_secret", secret)
-    keyring.set_password(svc, "refresh_token", refresh)
+    pfx = _prefix(mode)
+    keyring.set_password(f"{pfx}_secret", "client_secret", secret)
+    keyring.set_password(f"{pfx}_token",  "refresh_token", refresh)
     console.print("[green]Credentials saved to Windows Credential Manager.[/green]\n")
 
     # Verify
@@ -241,8 +241,8 @@ def _secrets_store(mode: str) -> None:
     except Exception as exc:
         console.print(f"[red]✗  Verification failed: {exc}[/red]")
         console.print("[yellow]Removing invalid credentials from Credential Manager…[/yellow]")
-        keyring.delete_password(svc, "client_secret")
-        keyring.delete_password(svc, "refresh_token")
+        keyring.delete_password(f"{pfx}_secret", "client_secret")
+        keyring.delete_password(f"{pfx}_token",  "refresh_token")
         sys.exit(1)
 
 

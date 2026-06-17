@@ -49,7 +49,7 @@ BP_BUFFER:          Decimal = Decimal("1.25")
 ACTIVE_PROFILE: str = "default"
 
 
-def _keyring_service() -> str:
+def _keyring_prefix() -> str:
     return "meic_trader_sandbox" if MODE == "sandbox" else "meic_trader_live"
 
 
@@ -57,9 +57,9 @@ def load_credentials() -> None:
     """Read credentials from Windows Credential Manager into module-level vars."""
     global TT_SECRET, TT_REFRESH
     import keyring
-    service = _keyring_service()
-    TT_SECRET  = keyring.get_password(service, "client_secret") or ""
-    TT_REFRESH = keyring.get_password(service, "refresh_token") or ""
+    prefix = _keyring_prefix()
+    TT_SECRET  = keyring.get_password(f"{prefix}_secret", "client_secret") or ""
+    TT_REFRESH = keyring.get_password(f"{prefix}_token",  "refresh_token") or ""
 
     if not TT_SECRET or not TT_REFRESH:
         mode_label = "sandbox" if MODE == "sandbox" else "live"
