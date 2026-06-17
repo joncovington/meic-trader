@@ -39,10 +39,10 @@ def _mid_price(bid: Decimal, ask: Decimal) -> Decimal:
 async def _get_quote(session, streamer_symbol: str) -> tuple[Decimal, Decimal]:
     """Return (bid, ask) for a single option by streaming a Quote event."""
     from tastytrade.streamer import DXLinkStreamer
-    from tastytrade.dxfeed import Quote, EventType
+    from tastytrade.dxfeed import Quote
 
     async with DXLinkStreamer(session) as streamer:
-        await streamer.subscribe(EventType.QUOTE, [streamer_symbol])
+        await streamer.subscribe(Quote, [streamer_symbol])
         quote: Quote = await asyncio.wait_for(streamer.get_event(Quote), timeout=15)
     return Decimal(str(quote.bid_price)), Decimal(str(quote.ask_price))
 

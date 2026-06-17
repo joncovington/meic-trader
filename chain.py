@@ -17,7 +17,7 @@ from decimal import Decimal
 import pytz
 from tastytrade.instruments import Option, NestedOptionChain, get_option_chain
 from tastytrade.streamer import DXLinkStreamer
-from tastytrade.dxfeed import Greeks, EventType
+from tastytrade.dxfeed import Greeks
 
 import config
 from client import get_session, reauth_on_401
@@ -57,7 +57,7 @@ async def _stream_greeks(session, symbols: list[str]) -> dict[str, Greeks]:
     """Subscribe to Greeks events and collect one snapshot per symbol."""
     collected: dict[str, Greeks] = {}
     async with DXLinkStreamer(session) as streamer:
-        await streamer.subscribe(EventType.GREEKS, symbols)
+        await streamer.subscribe(Greeks, symbols)
         pending = set(symbols)
         while pending:
             greek = await asyncio.wait_for(streamer.get_event(Greeks), timeout=30)
