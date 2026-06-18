@@ -5,9 +5,7 @@ Entry point is meic.py.  This module exposes _startup() and _main() for use by
 the CLI.  It is not meant to be run directly.
 """
 import asyncio
-import signal
 import sys
-import time
 
 from rich.console import Console
 from rich.panel import Panel
@@ -95,21 +93,14 @@ async def _main() -> None:
     await run_scheduler(run_entry)
 
 
+_SHUTDOWN_TIMEOUT = 5  # seconds to wait for tasks to honour cancellation
+
+
 def main(mode: str = "sandbox", profile: str | None = None) -> None:
     config.init(mode=mode, profile_override=profile)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
-    def _stop():
-        log.info("Shutdown signal received.")
-        loop.stop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, _stop)
-        except NotImplementedError:
-            pass
 
     log.info("MEIC Trader starting up... Mode=%s Profile=%s", mode, profile or config.ACTIVE_PROFILE)
 
@@ -118,9 +109,22 @@ def main(mode: str = "sandbox", profile: str | None = None) -> None:
     except (KeyboardInterrupt, SystemExit):
         log.info("Shutdown requested.")
     finally:
+        log.info("Cleaning up...")
+        # Cancel the keepalive task first
         loop.run_until_complete(shutdown_session())
+        # Cancel every remaining task (scheduler sleep, in-flight entries, etc.)
         pending = asyncio.all_tasks(loop)
         if pending:
-            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            for task in pending:
+                task.cancel()
+            try:
+                loop.run_until_complete(
+                    asyncio.wait_for(
+                        asyncio.gather(*pending, return_exceptions=True),
+                        timeout=_SHUTDOWN_TIMEOUT,
+                    )
+                )
+            except (asyncio.TimeoutError, Exception):
+                log.warning("Some tasks did not finish within %ds — forcing shutdown.", _SHUTDOWN_TIMEOUT)
         loop.close()
         log.info("MEIC Trader stopped.")
